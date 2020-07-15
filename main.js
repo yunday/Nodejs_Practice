@@ -13,6 +13,7 @@ function templateHTML(title, list, body){
     <body>
       <h1><a href="/">WEB</a></h1>
       ${list}
+      <a href="/create">create</a>
       ${body}
     </body>
     </html>
@@ -47,7 +48,27 @@ var app = http.createServer(function(request, response) {
         response.end(template);
       });
     })
-  } else {
+  } else if (pathname === '/create') {
+      fs.readdir('./data', function(error, filelist) {
+        var title = 'WEB - create';
+        var description = 'hello, Node.js';
+        var template = templateHTML(title, templateList(filelist), `
+        <form action="http://localhost:3000/process_create"
+        method="post">
+          <p><input type="text" name="title" placeholder="title"></p>
+          <p>
+            <textarea name="description" placeholder="description"></textarea>
+          </p>
+          <p>
+            <input type="submit">
+          </p>
+        </form>
+
+        `); // placeholder는 텍스트칸에 default 메세지 (무엇을 입력할지 가이드를 줌)
+        response.writeHead(200);
+        response.end(template);
+      });
+  }else {
     response.writeHead(404); // 404는 에러의 약속된 번호
     response.end('Not found');
   }
