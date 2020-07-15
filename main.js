@@ -2,21 +2,8 @@ var http = require('http');
 var fs = require('fs');
 var url = require('url'); // url이라는 모듈을 사용할 것이다
 
-var app = http.createServer(function(request,response){
-    var _url = request.url;
-    var queryData = url.parse(_url, true).query;
-    var title = queryData.id;
-    console.log(title); // 객체가 뭔지 몰라요
-    if(_url == '/'){
-      title = 'Welcome';
-    }
-    if(_url == '/favicon.ico'){
-      response.writeHead(404);
-      response.end();
-      return;
-    }
-    response.writeHead(200);
-    var template = `
+function templateHTML(title, list, body){
+  return `
     <!doctype html>
     <html>
     <head>
@@ -25,24 +12,44 @@ var app = http.createServer(function(request,response){
     </head>
     <body>
       <h1><a href="/">WEB</a></h1>
-      <ul>
-        <li><a href="/?id=HTML">HTML</a></li>
-        <li><a href="/?id=CSS">CSS</a></li>
-        <li><a href="/?id=JavaScript">JavaScript</a></li>
-      </ul>
-      <h2>${title}</h2>
-      <p><a href="https://www.w3.org/TR/html5/" target="_blank" title="html5 speicification">Hypertext Markup Language (HTML)</a> is the standard markup language for <strong>creating <u>web</u> pages</strong> and web applications.Web browsers receive HTML documents from a web server or from local storage and render them into multimedia web pages. HTML describes the structure of a web page semantically and originally included cues for the appearance of the document.
-      <img src="coding.jpg" width="100%">
-      </p><p style="margin-top:45px;">HTML elements are the building blocks of HTML pages. With HTML constructs, images and other objects, such as interactive forms, may be embedded into the rendered page. It provides a means to create structured documents by denoting structural semantics for text such as headings, paragraphs, lists, links, quotes and other items. HTML elements are delineated by tags, written using angle brackets.
-      </p>
+      ${list}
+      ${body}
     </body>
     </html>
-
     `;
-    response.end(template);
-    // 경로에 해당하는 파일로부터 읽어 가져옴
+}
+function templateList(filelist){
+  var list = '<ul>';
+  var i = 0;
+  while (i < filelist.length) {
+    list += `<li><a href="/?id=${filelist[i]}">${filelist[i]}</a></li>`;
+    i++;
+  }
+  list += '</ul>';
+  return list;``
+}
 
+var app = http.createServer(function(request, response) {
+  var _url = request.url;
+  var queryData = url.parse(_url, true).query;
+  var pathname = url.parse(_url, true).pathname;
+  if (pathname === '/') {
+    fs.readdir('./data', function(error, filelist) {
+      fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description) {
+        if(queryData.id === undefined){
+          var title = 'Welcome';
+          var description = 'hello, Node.js';
+        }else{
+          var title = queryData.id;
+        }
+        var template = templateHTML(title, templateList(filelist), `<h2>${title}</h2>${description}`);
+        response.writeHead(200);
+        response.end(template);
+      });
+    })
+  } else {
+    response.writeHead(404); // 404는 에러의 약속된 번호
+    response.end('Not found');
+  }
 });
 app.listen(3000);
-
-// ctrl + C 하면 터미널 나가짐
